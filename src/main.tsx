@@ -68,7 +68,6 @@ export default function FlowList({
   const shimRef = useRef(null)
 
   const _dataReducer = (name: string, data: any) => {
-    console.log('_dataReducer', name, data)
     return (jsCore as any)[name]({
       getter: () => store,
       setter: ({ value, callback }: { value: Record<string, any>, callback?: any }) => {

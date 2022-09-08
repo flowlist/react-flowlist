@@ -8,39 +8,46 @@ yarn add @flowlist/react-flowlist
 
 ## Usage
 
-``` tsx
+``` js
+const someQuery = {
+  count: 10
+}
+const getList = (params) => new Promise((resolve, reject) => {
+  try {
+    console.log('params contain someQuery', params)
+    const list = await fetch('/get/data/route')
+
+    resolve({
+      total: 0,
+      noMore: false,
+      result: list
+    })
+  } catch (err) {
+    reject(err)
+  }
+})
+```
+
+``` jsx
 <FlowList
-  func={getPostData}
-  prefetchData={{
-    result: posts.result,
-    noMore: posts.no_more,
-    total: posts.total,
-    fetched: true,
-    nothing: posts.result.length === 0
-  }}
-  mainSlot={(({ result }: any) => {
-    return result.map((item: any) => {
-      if (item.utmType === 'twitter') {
-        return <TwitterItem item={item} key={item.id}></TwitterItem>
-      }
-      return <YoutubeItem item={item} key={item.id}></YoutubeItem>
+  func={getList}
+  query={someQuery}
+  mainSlot={(({ result }) => {
+    return result.map((item) => {
+      return <ListItem item={item} key={item.id}></ListItem>
     })
   })}
   firstloadingSlot={() => {
-    return <>
-      <img src="/img/flow/loading.svg" style={{ marginBottom: '1px' }} alt="loading" />
-      <img src="/img/flow/loading.svg" style={{ marginBottom: '1px' }} alt="loading" />
-      <img src="/img/flow/loading.svg" alt="loading" />
-    </>
-  }}
-  nothingSlot={() => {
-    return <img src="/img/flow/nothing.svg" alt="nothing" />
-  }}
-  loadingSlot={() => {
-    return <img src="/img/flow/loading.svg" alt="loading" />
+    return <>launch loading slot</>
   }}
   firstErrorSlot={() => {
-    return <img src="/img/flow/error.svg" alt="error" />
+    return <>launch error slot</>
+  }}
+  nothingSlot={() => {
+    return <>list empty slot</>
+  }}
+  loadingSlot={() => {
+    return <>load more loading slot</>
   }}
 ></FlowList>
 ```
