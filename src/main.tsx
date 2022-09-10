@@ -68,7 +68,7 @@ export default function FlowList({
   const shimRef = useRef(null)
 
   const _dataReducer = (name: string, data: any) => {
-    console.log('_dataReducer', name, data)
+    console.log('_dataReducer', name, data, store)
     return (jsCore as any)[name]({
       getter: () => store,
       setter: ({ value, callback }: { value: Record<string, any>, callback?: any }) => {
@@ -253,6 +253,9 @@ export default function FlowList({
   const observer = useMemo(() => getObserver(), [])
 
   const initData = () => {
+    if (store.loading || store.error) {
+      return
+    }
     return new Promise(async (resolve) => {
       try {
         await _dataReducer('initData', {
@@ -271,6 +274,9 @@ export default function FlowList({
   }
 
   const loadMore = () => {
+    if (store.loading || store.error) {
+      return
+    }
     return new Promise(async (resolve) => {
       try {
         await _dataReducer('loadMore', {
