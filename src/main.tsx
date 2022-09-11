@@ -68,18 +68,18 @@ export default function FlowList({
   const shimRef = useRef(null)
 
   const _dataReducer = (name: string, data: any) => {
-    console.log('_dataReducer', name, data, store)
+    console.log('_dataReducer', name)
     return (jsCore as any)[name]({
       getter: () => store,
       setter: ({ value, callback }: { value: Record<string, any>, callback?: any }) => {
-        const shouldAsyncPatch = value.loading !== store.loading
         let newData = {
           ...store,
           ...value,
-          loading: store.loading
+          loading: true
         }
+        console.log('setter', value, newData)
         setStore(newData)
-        if (shouldAsyncPatch) {
+        if (store.loading === true && value.loading === false) {
           setTimeout(() => {
             setStore({
               ...store,
@@ -138,7 +138,7 @@ export default function FlowList({
       if (loop < 10) {
         setTimeout(() => {
           _initFlowLoader(loop + 1)
-        }, 100)
+        }, 200)
       }
       return
     }
@@ -177,7 +177,7 @@ export default function FlowList({
   }
 
   const _fetchDataFn = () => {
-    if (!isAuto || store.loading || store.error) {
+    if (!isAuto || store.loading || store.error || store.noMore) {
       return
     }
     if (
@@ -253,9 +253,6 @@ export default function FlowList({
   const observer = useMemo(() => getObserver(), [])
 
   const initData = () => {
-    if (store.loading || store.error) {
-      return
-    }
     return new Promise(async (resolve) => {
       try {
         await _dataReducer('initData', {
@@ -274,9 +271,6 @@ export default function FlowList({
   }
 
   const loadMore = () => {
-    if (store.loading || store.error) {
-      return
-    }
     return new Promise(async (resolve) => {
       try {
         await _dataReducer('loadMore', {
