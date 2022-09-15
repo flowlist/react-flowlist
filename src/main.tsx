@@ -30,7 +30,8 @@ export default function FlowList({
   slotLoadMore,
   onError,
   onSuccess,
-  prefetchData
+  prefetchData,
+  className
 }: {
   func: String | Function
   type?: string
@@ -53,6 +54,7 @@ export default function FlowList({
   onSuccess?: Function
   children?: ReactNode
   prefetchData?: any
+  className?: string
 }) {
   const [store, setStore] = useState<{
     result: Record<string, any> | any[]
@@ -68,7 +70,7 @@ export default function FlowList({
   const shimRef = useRef(null)
 
   const _dataReducer = (name: string, data: any) => {
-    console.log('_dataReducer', name)
+    // console.log('_dataReducer', name)
     return (jsCore as any)[name]({
       getter: () => store,
       setter: ({ value, callback }: { value: Record<string, any>, callback?: any }) => {
@@ -77,13 +79,13 @@ export default function FlowList({
           ...value,
           loading: true
         }
-        console.log('setter', value, newData)
+        // console.log('setter', value, newData)
         setStore(newData)
         if (store.loading === true && value.loading === false) {
           setTimeout(() => {
             setStore({
               ...store,
-              loading: value.loading
+              loading: false
             })
             callback && callback()
           }, 200)
@@ -293,7 +295,7 @@ export default function FlowList({
     _initFlowLoader()
   }, [])
 
-  return <div className='list-view' style={{ position: 'relative' }}>
+  return <div className={`list-view ${className}`} style={{ position: 'relative' }}>
     {
       store.fetched && headerSlot && headerSlot(store)
     }
