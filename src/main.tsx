@@ -129,17 +129,12 @@ export default function FlowList({
     onSuccess && onSuccess(data)
   }
 
-  const _initFlowLoader = (loop = 0) => {
-    if (autoload === 0) {
-      return
-    }
-
-    if (!shimRef || !shimRef.current) {
-      if (loop < 10) {
-        setTimeout(() => {
-          _initFlowLoader(loop + 1)
-        }, 200)
-      }
+  const _initFlowLoader = () => {
+    if (
+      autoload === 0 ||
+      !shimRef ||
+      !shimRef.current
+    ) {
       return
     }
 
@@ -148,11 +143,11 @@ export default function FlowList({
       observer.observe(shimRef.current)
     }
 
-    addEvent(
-      getScrollParentDom(shimRef.current, scrollX),
-      'scroll',
-      _scrollFn
-    )
+    // addEvent(
+    //   getScrollParentDom(shimRef.current, scrollX),
+    //   'scroll',
+    //   _scrollFn
+    // )
   }
 
   const _scrollFn = (event: any, force = false) => {
@@ -191,11 +186,11 @@ export default function FlowList({
         observer.unobserve(shimRef.current)
         ;(shimRef.current as any).__lazy_handler__ = undefined
       }
-      offEvent(
-        getScrollParentDom(shimRef.current, scrollX),
-        'scroll',
-        _scrollFn
-      )
+      // offEvent(
+      //   getScrollParentDom(shimRef.current, scrollX),
+      //   'scroll',
+      //   _scrollFn
+      // )
       return
     }
     requestIdleCallback && requestIdleCallback(() => {
@@ -290,8 +285,15 @@ export default function FlowList({
 
   useEffect(() => {
     setStore(jsCore.utils.generateDefaultField(prefetchData))
-    _initFlowLoader()
   }, [])
+
+  useEffect(() => {
+    if (!shimRef.current) {
+      return
+    }
+
+    _initFlowLoader()
+  }, [shimRef])
 
   return <div className='list-view' style={{ position: 'relative' }}>
     {
@@ -319,7 +321,7 @@ export default function FlowList({
           {
             store.result.length
               ? loadingSlot ? loadingSlot() : 'loading...'
-              : firstloadingSlot ? firstloadingSlot() : 'loading...'
+              : firstloadingSlot ? firstloadingSlot() : 'landing...'
           }          
           </> : <>
             {
