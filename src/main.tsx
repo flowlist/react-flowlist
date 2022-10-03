@@ -74,24 +74,16 @@ export default function FlowList({
     return (jsCore as any)[name]({
       getter: () => store,
       setter: ({ value, callback }: { value: Record<string, any>, callback?: any }) => {
-        let newData = {
+        setStore({
           ...store,
-          ...value,
-          loading: true
-        }
-        // console.log('setter', value, newData)
-        setStore(newData)
-        if (store.loading === true && value.loading === false) {
+          ...value
+        })
+        if (value.loading === false && shimRef && shimRef.current) {
           setTimeout(() => {
-            setStore({
-              ...store,
-              loading: false
-            })
-            callback && callback()
+            ;(shimRef.current as any)._loading = false
           }, 200)
-        } else {
-          callback && callback()
         }
+        callback && callback()
       },
       ...data
     })
@@ -145,11 +137,11 @@ export default function FlowList({
       observer.observe(shimRef.current)
     }
 
-    // addEvent(
-    //   getScrollParentDom(shimRef.current, scrollX),
-    //   'scroll',
-    //   _scrollFn
-    // )
+    addEvent(
+      getScrollParentDom(shimRef.current, scrollX),
+      'scroll',
+      _scrollFn
+    )
   }
 
   const _scrollFn = (event: any, force = false) => {
@@ -188,14 +180,21 @@ export default function FlowList({
         observer.unobserve(shimRef.current)
         ;(shimRef.current as any).__lazy_handler__ = undefined
       }
-      // offEvent(
-      //   getScrollParentDom(shimRef.current, scrollX),
-      //   'scroll',
-      //   _scrollFn
-      // )
+      offEvent(
+        getScrollParentDom(shimRef.current, scrollX),
+        'scroll',
+        _scrollFn
+      )
       return
     }
     requestIdleCallback && requestIdleCallback(() => {
+      if (!shimRef || !shimRef.current) {
+        return
+      }
+      if ((shimRef.current as any)._loading) {
+        return
+      }
+      ;(shimRef.current as any)._loading = true
       store.fetched ? loadMore() : initData()
     })
   }
@@ -307,9 +306,7 @@ export default function FlowList({
     {
       store.fetched && footerSlot && footerSlot(store)
     }
-    {
-      !store.noMore && <div ref={shimRef} style={shimStyle} />
-    }
+    <div ref={shimRef} style={shimStyle} />
     {
       store.error ? <>
         {
