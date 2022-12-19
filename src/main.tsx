@@ -11,6 +11,7 @@ import {
 } from './utils'
 
 export default function FlowList({
+  refVal,
   func,
   type = jsCore.ENUM.FETCH_TYPE.AUTO,
   query = {},
@@ -33,6 +34,7 @@ export default function FlowList({
   prefetchData,
   className
 }: {
+  refVal?: any
   func: String | Function
   type?: string
   query?: Record<string, any>
@@ -404,8 +406,31 @@ export default function FlowList({
   }
 
   useEffect(() => {
-    setStore(jsCore.utils.generateDefaultField(prefetchData))
+    if (refVal !== undefined) {
+      refVal.current = {
+        reset,
+        push,
+        unshift,
+        patch,
+        insertBefore,
+        insertAfter,
+        remove,
+        search,
+        update,
+        merge,
+        jump,
+        retry,
+        refresh,
+        loadBefore,
+        loadMore,
+        initData
+      }
+    }
   }, [])
+
+  useEffect(() => {
+    setStore(jsCore.utils.generateDefaultField(prefetchData))
+  }, [prefetchData])
 
   useEffect(() => {
     if (!shimRef.current) {
