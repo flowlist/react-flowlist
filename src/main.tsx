@@ -74,24 +74,16 @@ export default function FlowList({
     return (jsCore as any)[name]({
       getter: () => store,
       setter: ({ value, callback }: { value: Record<string, any>, callback?: any }) => {
-        let newData = {
+        setStore({
           ...store,
-          ...value,
-          loading: true
-        }
-        // console.log('setter', value, newData)
-        setStore(newData)
-        if (store.loading === true && value.loading === false) {
+          ...value
+        })
+        if (value.loading === false && shimRef && shimRef.current) {
           setTimeout(() => {
-            setStore({
-              ...store,
-              loading: false
-            })
-            callback && callback()
+            ; (shimRef.current as any)._loading = false
           }, 200)
-        } else {
-          callback && callback()
         }
+        callback && callback()
       },
       ...data
     })
@@ -131,17 +123,12 @@ export default function FlowList({
     onSuccess && onSuccess(data)
   }
 
-  const _initFlowLoader = (loop = 0) => {
-    if (autoload === 0) {
-      return
-    }
-
-    if (!shimRef || !shimRef.current) {
-      if (loop < 10) {
-        setTimeout(() => {
-          _initFlowLoader(loop + 1)
-        }, 200)
-      }
+  const _initFlowLoader = () => {
+    if (
+      autoload === 0 ||
+      !shimRef ||
+      !shimRef.current
+    ) {
       return
     }
 
@@ -191,7 +178,7 @@ export default function FlowList({
       }
       if (observer) {
         observer.unobserve(shimRef.current)
-        ;(shimRef.current as any).__lazy_handler__ = undefined
+          ; (shimRef.current as any).__lazy_handler__ = undefined
       }
       offEvent(
         getScrollParentDom(shimRef.current, scrollX),
@@ -201,6 +188,13 @@ export default function FlowList({
       return
     }
     requestIdleCallback && requestIdleCallback(() => {
+      if (!shimRef || !shimRef.current) {
+        return
+      }
+      if ((shimRef.current as any)._loading) {
+        return
+      }
+      ; (shimRef.current as any)._loading = true
       store.fetched ? loadMore() : initData()
     })
   }
@@ -411,8 +405,15 @@ export default function FlowList({
 
   useEffect(() => {
     setStore(jsCore.utils.generateDefaultField(prefetchData))
-    _initFlowLoader()
   }, [])
+
+  useEffect(() => {
+    if (!shimRef.current) {
+      return
+    }
+
+    _initFlowLoader()
+  }, [shimRef])
 
   return <div className={className ? `list-view ${className}` : 'list-view'} style={{ position: 'relative' }}>
     {
@@ -424,9 +425,7 @@ export default function FlowList({
     {
       store.fetched && footerSlot && footerSlot(store)
     }
-    {
-      !store.noMore && <div ref={shimRef} style={shimStyle} />
-    }
+    <div ref={shimRef} style={shimStyle} />
     {
       store.error ? <>
         {
@@ -437,33 +436,33 @@ export default function FlowList({
       </> : <>
         {
           store.loading ? <>
-          {
-            store.result.length
-              ? loadingSlot ? loadingSlot() : 'loading...'
-              : firstloadingSlot ? firstloadingSlot() : 'loading...'
-          }          
+            {
+              store.result.length
+                ? loadingSlot ? loadingSlot() : 'loading...'
+                : firstloadingSlot ? firstloadingSlot() : 'landing...'
+            }
           </> : <>
             {
               store.nothing ? <>
-              {
-                nothingSlot ? nothingSlot() : 'there empty'
-              }
-              </> : <>
-              {
-                store.noMore ? <>
                 {
-                  noMoreSlot && noMoreSlot()
+                  nothingSlot ? nothingSlot() : 'there empty'
                 }
-                </> : <>
-                  {
-                    !isPagination && !isAuto && <>
+              </> : <>
+                {
+                  store.noMore ? <>
                     {
-                      slotLoadMore ? slotLoadMore() : <button onClick={loadMore}>click to loadmore</button>
+                      noMoreSlot && noMoreSlot()
                     }
-                    </>
-                  }
-                </>
-              }
+                  </> : <>
+                    {
+                      !isPagination && !isAuto && <>
+                        {
+                          slotLoadMore ? slotLoadMore() : <button onClick={loadMore}>click to loadmore</button>
+                        }
+                      </>
+                    }
+                  </>
+                }
               </>
             }
           </>
