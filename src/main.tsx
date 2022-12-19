@@ -205,6 +205,17 @@ export default function FlowList({
     })
   }
 
+  const _callMethod = ({ method, id, key, value }: any) => {
+    _dataReducer('updateState', {
+      ...params,
+      id,
+      value,
+      method,
+      changeKey: key,
+      uniqueKey
+    })
+  }
+
   const shimStyle = useMemo(() => {
     let result = {
       zIndex: -1,
@@ -254,13 +265,14 @@ export default function FlowList({
 
   const observer = useMemo(() => getObserver(), [])
 
-  const initData = () => {
+  const initData = (obj = {}) => {
     return new Promise(async (resolve) => {
       try {
         await _dataReducer('initData', {
           ...params,
           query: {
-            ...query
+            ...query,
+            ...obj
           }
         })
         _detectLoadMore()
@@ -272,14 +284,15 @@ export default function FlowList({
     })
   }
 
-  const loadMore = () => {
+  const loadMore = (obj = {}) => {
     return new Promise(async (resolve) => {
       try {
         await _dataReducer('loadMore', {
           ...params,
           query: {
             ...query,
-            is_up: 0
+            is_up: 0,
+            ...obj
           }
         })
         resolve(null)
@@ -290,12 +303,118 @@ export default function FlowList({
     })
   }
 
+  const loadBefore = (obj = {}) => {
+    return loadMore({ ...obj, is_up: 1 })
+  }
+
+  const refresh = (showLoading = true) => {
+    return new Promise(async (resolve) => {
+      try {
+        await _dataReducer('initData', {
+          ...params,
+          query: {
+            ...query,
+            __refresh__: true,
+            __reload__: !showLoading
+          }
+        })
+        _initFlowLoader()
+        resolve(null)
+      } catch (e) {
+        _handleAsyncError(e)
+        resolve(null)
+      }
+    })
+  }
+
+  const retry = (showLoading = true) => {
+    if (store && store.fetched) {
+      return loadMore()
+    } else {
+      return initData({
+        __refresh__: true,
+        __reload__: !showLoading
+      })
+    }
+  }
+
+  const reset = (key: any, value: any) => {
+    _callMethod({ key, value, method: jsCore.ENUM.CHANGE_TYPE.RESET_FIELD })
+  }
+
+  const push = (value: any) => {
+    _callMethod({ value, method: jsCore.ENUM.CHANGE_TYPE.RESULT_ADD_AFTER })
+  }
+
+  const unshift = (value: any) => {
+    _callMethod({ value, method: jsCore.ENUM.CHANGE_TYPE.RESULT_ADD_BEFORE })
+  }
+
+  const patch = (value: any) => {
+    _callMethod({ value, method: jsCore.ENUM.CHANGE_TYPE.RESULT_LIST_MERGE })
+  }
+
+  const insertBefore = (id: any, value: any) => {
+    _callMethod({
+      id,
+      value,
+      method: jsCore.ENUM.CHANGE_TYPE.RESULT_INSERT_TO_BEFORE
+    })
+  }
+
+  const insertAfter = (id: any, value: any) => {
+    _callMethod({
+      id,
+      value,
+      method: jsCore.ENUM.CHANGE_TYPE.RESULT_INSERT_TO_AFTER
+    })
+  }
+
+  const remove = (id: any) => {
+    _callMethod({ id, method: jsCore.ENUM.CHANGE_TYPE.RESULT_REMOVE_BY_ID })
+  }
+
+  const search = (id: any) => {
+    if (!store) {
+      return undefined
+    }
+    return jsCore.utils.searchValueByKey(
+      store.result,
+      id,
+      uniqueKey
+    )
+  }
+
+  const update = (id: any, key: any, value: any) => {
+    _callMethod({
+      id,
+      key,
+      value,
+      method: jsCore.ENUM.CHANGE_TYPE.RESULT_UPDATE_KV
+    })
+  }
+
+  const merge = (id: any, value: any) => {
+    _callMethod({
+      id,
+      value,
+      method: jsCore.ENUM.CHANGE_TYPE.RESULT_ITEM_MERGE
+    })
+  }
+
+  const jump = (page: number) => {
+    return _dataReducer('loadMore', {
+      ...params,
+      query: { ...query, page }
+    })
+  }
+
   useEffect(() => {
     setStore(jsCore.utils.generateDefaultField(prefetchData))
     _initFlowLoader()
   }, [])
 
-  return <div className={`list-view ${className}`} style={{ position: 'relative' }}>
+  return <div className={className ? `list-view ${className}` : 'list-view'} style={{ position: 'relative' }}>
     {
       store.fetched && headerSlot && headerSlot(store)
     }
