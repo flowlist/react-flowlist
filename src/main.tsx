@@ -4,7 +4,6 @@ import {
   checkInView,
   getObserver,
   addEvent,
-  offEvent,
   getScrollParentDom,
   isServer,
   requestIdleCallback
@@ -72,7 +71,6 @@ export default function FlowList({
   const shimRef = useRef(null)
 
   const _dataReducer = (name: string, data: any) => {
-    // console.log('_dataReducer', name)
     return (jsCore as any)[name]({
       getter: () => store,
       setter: ({ value, callback }: { value: Record<string, any>, callback?: any }) => {
@@ -175,18 +173,6 @@ export default function FlowList({
       store.fetched &&
       (store.noMore || store.nothing || isPagination)
     ) {
-      if (!shimRef || !shimRef.current) {
-        return
-      }
-      if (observer) {
-        observer.unobserve(shimRef.current)
-          ; (shimRef.current as any).__lazy_handler__ = undefined
-      }
-      offEvent(
-        getScrollParentDom(shimRef.current, scrollX),
-        'scroll',
-        _scrollFn
-      )
       return
     }
     requestIdleCallback && requestIdleCallback(() => {
