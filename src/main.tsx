@@ -6,7 +6,8 @@ import {
   addEvent,
   getScrollParentDom,
   isServer,
-  requestIdleCallback
+  requestIdleCallback,
+  offEvent
 } from './utils'
 
 export default function FlowList({
@@ -415,7 +416,19 @@ export default function FlowList({
   }, [])
 
   useEffect(() => {
-    setStore(jsCore.utils.generateDefaultField(prefetchData))
+    if (shimRef && shimRef.current) {
+      offEvent(
+        getScrollParentDom(shimRef.current, scrollX),
+        'scroll',
+        _scrollFn
+      )
+      ;(shimRef.current as any).__lazy_handler__ = undefined
+      ;observer && observer.unobserve(shimRef.current)
+      setStore(jsCore.utils.generateDefaultField(prefetchData))
+      _initFlowLoader()
+    } else {
+      setStore(jsCore.utils.generateDefaultField(prefetchData))
+    }
   }, [prefetchData])
 
   useEffect(() => {
