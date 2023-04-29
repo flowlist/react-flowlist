@@ -1,6 +1,6 @@
 {
   "name": "@flowlist/react-flowlist",
-  "version": "0.2.21",
+  "version": "0.2.25",
   "type": "module",
   "files": [
     "dist"

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef, ReactNode } from "react";
+import { useEffect, useState, useMemo, useRef, ReactNode, createElement } from "react";
 import * as jsCore from '@flowlist/js-core'
 import {
   checkInView,
@@ -32,7 +32,8 @@ export default function FlowList({
   onError,
   onSuccess,
   prefetchData,
-  className
+  className,
+  tagName
 }: {
   refVal?: any
   func: String | Function
@@ -57,6 +58,7 @@ export default function FlowList({
   children?: ReactNode
   prefetchData?: any
   className?: string
+  tagName?: string
 }) {
   const [store, setStore] = useState<{
     result: Record<string, any> | any[]
@@ -439,7 +441,9 @@ export default function FlowList({
     _initFlowLoader()
   }, [shimRef])
 
-  return <div className={className ? `list-view ${className}` : 'list-view'} style={{ position: 'relative' }}>
+  const CustomTag = tagName ?? 'div' as any
+
+  return <CustomTag className={className ? `list-view ${className}` : 'list-view'} style={{ position: 'relative' }}>
     {
       store.fetched && headerSlot && headerSlot(store)
     }
@@ -493,5 +497,5 @@ export default function FlowList({
         }
       </>
     }
-  </div>
+  </CustomTag>
 }
